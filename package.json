@@ -1,0 +1,26 @@
+{
+  "name": "ip-helper",
+  "version": "1.0.0",
+  "description": "ip calculate helper",
+  "main": "index.js",
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/zbinlin/ip-helper.git"
+  },
+  "keywords": [
+    "ip"
+  ],
+  "author": "zbinlin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/zbinlin/ip-helper/issues"
+  },
+  "homepage": "https://github.com/zbinlin/ip-helper#readme",
+  "devDependencies": {
+    "mocha": "^2.3.2",
+    "rewire": "^2.3.4"
+  }
+}
