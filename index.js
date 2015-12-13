@@ -4,7 +4,6 @@ var net = require("net");
 var debuglog = require("util").debuglog || function (prefix) {
     var ps = prefix.split(":");
     prefix = ps[0];
-    var level = ps[1] || "info";
     var debugs = (process.env["NODE_DEBUG"] || "").split(",");
     if (debugs.some(function (item) {
         return item.toLowerCase() == prefix.toLowerCase();
@@ -30,7 +29,7 @@ var format = {
     bold: function (str) {
         return "\u001b[1m" +  str + "\u001b[0m";
     }
-}
+};
 
 
 /*
@@ -78,8 +77,8 @@ function str2buf(str) {
             return parseInt(item, 10);
         }));
     } else if (net.isIPv6(str)) {
-        return new Buffer(str.split(":").reduce(function (pre, cur, idx, arr) {
-            pre.push(parseInt(cur, 16) >>> 8)
+        return new Buffer(str.split(":").reduce(function (pre, cur) {
+            pre.push(parseInt(cur, 16) >>> 8);
             pre.push(0xFF & parseInt(cur, 16));
             return pre;
         }, []));
@@ -158,7 +157,7 @@ function str2buf(str) {
 * 如：
 * <Buffer 7f 00 00 01> 轉換成 127.0.0.1
 * @param {Buffer} buf
-* @param {string} [type = "ipv4"]
+* @param {string} [type = buf.length === 4 ? "ipv4" : "ipv6"]
 * @returns {string}
 */
 function buf2str(buf, type) {
@@ -166,10 +165,11 @@ function buf2str(buf, type) {
     if (!(buf instanceof Buffer)) {
         throw new Error("第一個參數::" + buf + ":: 不是一個 Buffer 對象！");
     }
-    if (!type) {
-        type = "ipv4";
+    if (type === undefined) {
+        type = buf.length === 4 ? "ipv4" : "ipv6";
+    } else if (typeof type !== "string") {
+        type = String(type);
     }
-    type += "";
     switch (type.toLowerCase()) {
         case "ipv4":
             str = ([]).slice.apply(buf.slice(0, 4)).join(".");
