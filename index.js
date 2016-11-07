@@ -1,5 +1,10 @@
 "use strict";
 
+const { isIPRange, convertIPRangeToIterator } = require("./lib/range");
+
+exports.isIPRange = isIPRange;
+exports.convertIPRangeToIterator = convertIPRangeToIterator;
+
 var net = require("net");
 var debuglog = require("util").debuglog || function (prefix) {
     var ps = prefix.split(":");
@@ -28,7 +33,7 @@ logger.error = debuglog("ip-helper:error");
 var format = {
     bold: function (str) {
         return "\u001b[1m" +  str + "\u001b[0m";
-    }
+    },
 };
 
 
