@@ -4,7 +4,7 @@ var assert = require("assert");
 var util = require("util");
 var rewire = require("rewire");
 
-var ipHelper = require("./");
+var ipHelper = require("../");
 
 describe("ip-helper", function () {
     var IP_STR_1 = "127.0.0.1",
@@ -41,7 +41,7 @@ describe("ip-helper", function () {
     });
 
     describe(".<private>ip2str", function () {
-        var ipHelper = rewire(".");
+        var ipHelper = rewire("../index.js");
         var ip2str = ipHelper.__get__("ip2str");
         var tests = [
             { ip: "127.0.0.1", expected: "127.0.0.1" },
