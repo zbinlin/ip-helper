@@ -1,5 +1,7 @@
 "use strict";
 
+/* eslint-env mocha */
+
 var assert = require("assert");
 var util = require("util");
 var rewire = require("rewire");
@@ -7,36 +9,47 @@ var rewire = require("rewire");
 var ipHelper = require("../");
 
 describe("ip-helper", function () {
-    var IP_STR_1 = "127.0.0.1",
-        IP_STR_2 = "2001:DB8::1428:57ab",
-        IP_BUF_1 = new Buffer([127, 0, 0, 1]),
-        IP_BUF_2 = new Buffer([0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14, 0x28, 0x57, 0xab]);
+    var ipv4s = [
+        [ "127.0.0.1", new Buffer([127, 0, 0, 1]) ],
+    ];
+    var ipv6s = [
+        [ "::", new Buffer([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]) ],
+        [ "::1", new Buffer([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01]) ],
+        [ "1::", new Buffer([0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]) ],
+        [ "1::1", new Buffer([0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01]) ],
+        [ "1:2:3:4:5::", new Buffer([0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]) ],
+        [ "2001:db8::1428:57ab", new Buffer([0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14, 0x28, 0x57, 0xab]) ],
+    ];
     describe(".str2buf", function () {
-        it(IP_STR_1 + " -> " + util.inspect(IP_BUF_1), function () {
-            assert.ok(ipHelper.str2buf(IP_STR_1).equals(IP_BUF_1));
+        ipv4s.forEach(function (item) {
+            it(item[0] + " -> " + util.inspect(item[1]), function () {
+                assert.deepEqual(ipHelper.str2buf(item[0]), item[1]);
+            });
         });
-
-        it(IP_STR_2 + " -> " + util.inspect(IP_BUF_2), function () {
-            assert.ok(ipHelper.str2buf(IP_STR_2).equals(IP_BUF_2));
+        ipv6s.forEach(function (item) {
+            it(item[0] + " -> " + util.inspect(item[1]), function () {
+                assert.deepEqual(ipHelper.str2buf(item[0]), item[1]);
+            });
         });
 
         it("abcd should throw an Error", function () {
             assert.throws(function () {
                 ipHelper.str2buf("abcd");
-            }, /非法 IP 地址/)
+            }, /非法 IP 地址/);
         });
     });
 
     describe(".buf2str", function () {
-        it(util.inspect(IP_BUF_1) + " -> " + IP_STR_1, function () {
-            assert.equal(ipHelper.buf2str(IP_BUF_1),
-                         IP_STR_1
-            );
+        ipv4s.forEach(function (item) {
+            it(util.inspect(item[1]) + " -> " + item[0], function () {
+                assert.equal(ipHelper.buf2str(item[1]), item[0]);
+            });
         });
-        it(util.inspect(IP_BUF_2) + " -> " + IP_STR_2, function () {
-            assert.equal(ipHelper.buf2str(IP_BUF_2, "ipv6").toLowerCase(),
-                         IP_STR_2.toLowerCase()
-            );
+        ipv6s.forEach(function (item) {
+            it(util.inspect(item[1]) + " -> " + item[0], function () {
+                assert.equal(ipHelper.buf2str(item[1], "ipv6").toLowerCase(),
+                             item[0].toLowerCase());
+            });
         });
     });
 
@@ -51,6 +64,34 @@ describe("ip-helper", function () {
         tests.forEach(function (test) {
             it((typeof test.ip == "number" ? "0x" + test.ip.toString(16) : test.ip) + " -> " + test.expected, function () {
                 assert.equal(ip2str(test.ip), test.expected);
+            });
+        });
+    });
+
+    describe(".<private>tryNormalize", function () {
+        var ipHelper = rewire("../index.js");
+        var tryNormalize = ipHelper.__get__("tryNormalize");
+        var tests = [
+            { test: "0:1:2:3:4:5:6:7", expected: "0:1:2:3:4:5:6:7" },
+            { test: "::1",             expected: "0:0:0:0:0:0:0:1" },
+            { test: "::0",             expected: "0:0:0:0:0:0:0:0" },
+            { test: "1::",             expected: "1:0:0:0:0:0:0:0" },
+            { test: "0::",             expected: "0:0:0:0:0:0:0:0" },
+            { test: "0:1::",           expected: "0:1:0:0:0:0:0:0" },
+            { test: "0:1:2::",         expected: "0:1:2:0:0:0:0:0" },
+            { test: "0:1:2:3::",       expected: "0:1:2:3:0:0:0:0" },
+            { test: "0:1:2:3:4::",     expected: "0:1:2:3:4:0:0:0" },
+            { test: "0:1:2:3:4:5::",   expected: "0:1:2:3:4:5:0:0" },
+            { test: "0::7",            expected: "0:0:0:0:0:0:0:7" },
+            { test: "0:1::7",          expected: "0:1:0:0:0:0:0:7" },
+            { test: "0:1::6:7",        expected: "0:1:0:0:0:0:6:7" },
+            { test: "0:1:2::6:7",      expected: "0:1:2:0:0:0:6:7" },
+            { test: "0:1:2::5:6:7",    expected: "0:1:2:0:0:5:6:7" },
+            { test: "0:1:2:3::5:6:7",  expected: "0:1:2:3:0:5:6:7" },
+        ];
+        tests.forEach(function (item, idx) {
+            it(idx + ": " + item.test + " -> " + item.expected, function () {
+                assert.equal(tryNormalize(item.test), item.expected);
             });
         });
     });
