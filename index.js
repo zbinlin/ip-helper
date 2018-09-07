@@ -74,12 +74,12 @@ function str2buf(str) {
     str = ip2str(str);
 
     if (net.isIPv4(str)) {
-        return new Buffer(str.split(".").map(function (item) {
+        return Buffer.from(str.split(".").map(function (item) {
             return parseInt(item, 10);
         }));
     } else if (net.isIPv6(str)) {
         str = tryNormalize(str);
-        return new Buffer(str.split(":").reduce(function (pre, cur, idx, ary) {
+        return Buffer.from(str.split(":").reduce(function (pre, cur, idx, ary) {
             var num = parseInt(cur, 16);
             pre.push(num >>> 8);
             pre.push(num & 0xFF);
